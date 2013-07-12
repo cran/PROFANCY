@@ -1,0 +1,193 @@
+%
+% NOTE -- ONLY EDIT PROFANCY.Rnw!!!
+% PROFANCY.tex file will get overwritten.
+%
+%\VignetteIndexEntry{PROFANCY Overview}
+%\VignetteKeywords{prioritize metabolites}
+%\VignettePackage{PROFANCY}
+%\VignetteDepends{Matrix,lattice,igraph}
+
+\documentclass[10pt]{article}
+
+\usepackage{hyperref}
+\usepackage[pdftex]{graphicx}
+\SweaveOpts{keep.source=TRUE,eps=FALSE,pdf=TRUE,prefix=FALSE} 
+\author{Qianlan Yao, Desi Shang, Chunquan Li}
+
+\textwidth=6.2in
+\textheight=8.5in
+%\parskip=.3cm
+\oddsidemargin=.1in
+\evensidemargin=.1in
+\headheight=-.3in
+
+\newcommand{\xiaowuhao}{\fontsize{9pt}{\baselineskip}\selectfont}
+\newcommand{\liuhao}{\fontsize{7.875pt}{\baselineskip}\selectfont}
+\newcommand{\qihao}{\fontsize{5.25pt}{\baselineskip}\selectfont}
+\newcommand\Rpackage[1]{{\textsf{#1}\index{#1 (package)}}}
+\newcommand\RpackageNoindex[1]{{\textsf{#1}}}
+\newcommand\Rclass[1]{{\textit{#1}\index{#1 (class)}}}
+\newcommand\Rfunction[1]{{{\small\texttt{#1}}\index{#1 (function)}}}
+\newcommand\Rmethod[1]{{\small\texttt{#1}}}
+\newcommand\Rcommand[1]{{{\small\texttt{#1}}\index{#1 (function)}}}
+\newcommand\Rfunarg[1]{{\small\texttt{#1}}}
+\newcommand\Robject[1]{{\small\texttt{#1}}}
+\bibliographystyle{plainnat}
+
+\begin{document}
+\setkeys{Gin}{width=1.0\textwidth}
+\title{How To Use PROFANCY}
+\maketitle
+\tableofcontents
+
+\section{Overview}
+This vignette demonstrates how to easily use the \Rpackage{PROFANCY} package. This package can  prioritize candidate disease metabolites by random walk analysis in the metabolites network with virtual pathway nodes. This system provides the rank of candidate diseases metabolites which coud be provided by users or this system.  
+<<echo=FALSE>>=
+library(PROFANCY)
+@ 
+
+\section{Get all disease names provided by PROFANCY package }\label{Disease}
+
+The section introduces how to get all disease names provided by PROFANCY package. PROFANCY package provides 71 diseases which with known disease metabolites. The function \Rfunction{getProvidedDiseaseName} could help users get the disease list. If the interest disease in this disease list, users could use the default seeds(disease known metabolites) in /Rfunction(getTopDiseaseMetabolites) without input their own. The following commands can get the disease list in R.
+
+<<>>= 
+#get path of the KGML files
+ProvidedDiseaseName<-getProvidedDiseaseName()
+print(ProvidedDiseaseName[1:5])
+length(ProvidedDiseaseName)
+@
+
+
+
+\section{The methods of prioritizing the disease metabolites}\label{Methods}
+
+The function \Rfunction{getTopDiseaseMetabolites} could get the top ranked candidate metaoblites by prioritization of the disease candidate metabolites using known disease metabolites as seed node to perform random walk on metabolite network with virtual pathway nodes.
+
+In this function, there are seven parameters. "diseaseName" is a character of the name of the disease users want to study. "network" is a charecter. Which type of metabolites network should be chose. Users could choose KEGG or EHMN network. The defult value is "KEGG" network."seed" is charecter vector. The seed metaboites are the known disease metabolites are used in random walk analysis on the network. If users have set the seedDefault parameter TURE and selceted diseaseName provided by system, users do not need to set this parameter. Otherwise, users should input seed metabolites. "candidates" is a charecter vector. If users set the candidateDefault parameter FALSE, users should input candidates. If users do not set this parameter, the candidate metabolites are all metabolites in the network except seed metabolites. "seedDefault" is a logical value(TRUE or FALSE). If users set TRUE and have selected the diseaseName provided by system, the seed metabolites are default known disease metabolites. Otherwise, users shoud input seed metabolites. "candidateDefault" is a logical value(TRUE or FALSE). If TRUE, the metabolites in network except seed metabolites will be prioritized. Otherwise, users shoud input candidate metabolites. "showTop" is an integer. The number of top ranked candidate metabolites users want to show.
+
+The return value of this funcion is a dataframe which contained the top ranked candidate metaoblites and some information of them.
+
+If users choose the disease name from provided in \Rfunction{getProvidedDiseaseName} and do not want to input seeds, then users should set the seedDefault TRUE. If users set candidateDefault is TRUE, users should not set the candidates parameter, the default candidate metabolites would be used in this condition. 
+
+The following commands could get the top ranked candidate metaoblites.
+
+<<>>= 
+##Example 1: Users have chose disease name provided by system and network
+## is set "EHMN". The seeds and candidates are default.
+ProvidedDiseaseName<-getProvidedDiseaseName() ##get all disease name provided.
+diseaseName<-ProvidedDiseaseName[17]  ##choose the disease you want to study.
+example1<-getTopDiseaseMetabolites(diseaseName=diseaseName,network="EHMN"
+          ,seedDefault=TRUE,showTop=30,candidateDefault=TRUE)
+print(example1[1:5,])
+#write.table(example1,"example1.txt",quote=FALSE,row.names=FALSE,sep="\t")
+
+
+##Example 2: The disease name is provided by users. The seeds and candidates
+## are provided by users. The network is set "KEGG".
+diseaseName<-"prostate cancer"  ##the disease name provided by users.
+path1<-paste(system.file(package="PROFANCY"),"/localdata/ProstateCandidates.txt",sep="")
+candidateExample<-read.table(path1)
+candidateExample<-candidateExample[[1]]
+path2<-paste(system.file(package="PROFANCY"),"/localdata/ProstateSeeds.txt",sep="")
+seedExample<-read.table(path2)
+seedExample<-seedExample[[1]]
+example2<-getTopDiseaseMetabolites(diseaseName,network="KEGG",seed=seedExample,
+      candidates=candidateExample,seedDefault=FALSE,showTop=30,candidateDefault=FALSE)
+print(example2[1:5,])
+#write.table(example2,"example2.txt",quote=FALSE,row.names=FALSE,sep="\t")
+
+
+
+##Example 3: Disease name chose in our provided. The seeds are provided by default.
+## The candidates are provided by users. Network is set "EHMN".
+path1<-paste(system.file(package="PROFANCY"),"/localdata/ProstateCandidates.txt",sep="")
+candidateExample<-read.table(path1)
+candidateExample<-candidateExample[[1]]
+example3<-getTopDiseaseMetabolites(diseaseName="Prostate cancer",network="EHMN",
+          candidates=candidateExample,seedDefault=TRUE,showTop=30,candidateDefault=FALSE)
+print(example3[1:5,])
+#write.table(example3,"example3.txt",quote=FALSE,row.names=FALSE,sep="\t")
+
+
+
+##Example 4: Disease name chose in our provided. The seeds are provided by users. 
+##The candidates are provided by default. Network is set "KEGG".
+path2<-paste(system.file(package="PROFANCY"),"/localdata/ProstateSeeds.txt",sep="")
+seedExample<-read.table(path2)
+seedExample<-seedExample[[1]]
+example4<-getTopDiseaseMetabolites(diseaseName="Prostate cancer",network="KEGG",
+                 seed=seedExample,seedDefault=FALSE,showTop=30,candidateDefault=TRUE)
+print(example4[1:5,])
+#write.table(example4,"example4.txt",quote=FALSE,row.names=FALSE,sep="\t")
+@
+
+
+\section{getSeed}\label{Disease}
+This funtion can get seed metabolites (known disease metabolites). If seedDefault is TRUE, this system provided default seed metabolites. Otherwise, users should input the seed metabolites and the seed metabolites are inputting metabolite which are in the metabolites network.
+
+<<>>= 
+#############    Get disease seed metabolites   ################
+##Example 1: Users have chose disease name provided by system (Prostate cancer), 
+##network is set "EHMN". The seeds are provided by default.
+seed1<-getSeed(diseaseName="Prostate cancer",network="EHMN",seedDefault=TRUE)
+print(seed1[1:5])
+
+
+
+##Example 2: The disease name is provided by users. The seeds are provided by users. 
+##The network is set "KEGG".
+diseaseName<-"prostate cancer"  ##the disease name provided by users.
+path2<-paste(system.file(package="PROFANCY"),"/localdata/ProstateSeeds.txt",sep="")
+seedExample<-read.table(path2)
+seedExample<-seedExample[[1]]
+seed2<-getSeed(diseaseName="Prostate cancer",network="EHMN",seed=seedExample,seedDefault=FALSE)
+print(seed2[1:5])
+@
+
+
+\section{getCandidates}\label{Disease}
+This funtion can get candidate metabolites to be prioritized. If candidateDefault is TRUE, this system provided default candidate metabolites which is the metabolites in metabolites network except seed metabolites. Otherwise, users could input candidate metabolites. Then the candidate metabolites are the inputting metabolites which are in the metabolites network.
+
+<<>>= 
+#############    Get disease candidates   ################
+##Example 1: Users have chose disease name provided by system (Prostate cancer),
+## network is set to "EHMN". 
+##The candidates and seed metabolites are default.
+Candidates1<-getCandidates(diseaseName="Prostate cancer",network="EHMN",
+                 seedDefault=TRUE,candidateDefault=TRUE)
+print(Candidates1[1:5])
+
+
+
+##Example 2: The disease name is input by users. The seeds are provided by users.
+##The network is set to "KEGG".The candidates are provided by users.
+path1<-paste(system.file(package="PROFANCY"),"/localdata/ProstateCandidates.txt",sep="")
+candidateExample<-read.table(path1)
+candidateExample<-candidateExample[[1]]
+path2<-paste(system.file(package="PROFANCY"),"/localdata/ProstateSeeds.txt",sep="")
+seedExample<-read.table(path2)
+seedExample<-seedExample[[1]]
+Candidates2<-getCandidates(diseaseName="Prostate cancer",network="KEGG",seed=seedExample,
+            seedDefault=FALSE,candidates=candidateExample,candidateDefault=FALSE)
+print(Candidates2[1:5])
+@
+
+
+
+\section{Data management}\label{managementSection}
+The environment variable \Robject{envData}, which is used as the database of the system, The environment variable envData save many information. We can use the function \Rfunction{ls} to see the variable and use  \Rfunction{ls(envData)} to see information in it, which include \Robject{DiseaseInfList}, \Robject{EHMNAddPathInfNetwork}, \Robject{KEGGAddPathInfNetwork}, \Robject{MetaboliteInf}, \Robject{ProstateCandidates}, \Robject{ProstateSeeds} etc. We can use the function \Rfunction{get} to obtain one of them.  
+
+<<>>=  
+##data in environment variable envData
+ls(envData)
+@
+
+We can obtain these data in the environment variable \Robject{envData} using the function \Rfunction{get}. The following command gets information of all metabolites in the variable \Robject{MetaboliteInf} in R. 
+<<>>=  
+#get information of all metabolites in the network
+MetaboliteInf<-get("MetaboliteInf",envir=envData)
+@
+
+
+
+\end{document}
